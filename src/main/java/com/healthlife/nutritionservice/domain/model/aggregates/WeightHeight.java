@@ -3,19 +3,15 @@ package com.healthlife.nutritionservice.domain.model.aggregates;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name ="weight_height_history")
+
 public class WeightHeight {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String dni;
     private Double peso;
     private Double altura;
 
-    @Column(name = "fecha_registro")
     private LocalDate fechaRegistro;
 
     public WeightHeight() {

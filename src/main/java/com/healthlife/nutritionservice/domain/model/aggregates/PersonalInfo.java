@@ -3,23 +3,17 @@ package com.healthlife.nutritionservice.domain.model.aggregates;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "personal_info")
+
 public class PersonalInfo {
 
-    @Id
     private String dni;
 
-    @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    @Column(name = "genero")
     private String genero;
 
-    @Column(name = "tipo_cuerpo")
     private String tipoCuerpo;
 
-    @Column(name="imc")
     private Double imc;
 
     public PersonalInfo() {}

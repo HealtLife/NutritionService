@@ -3,11 +3,9 @@ package com.healthlife.nutritionservice.domain.model.aggregates;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "medical_notes")
+
 public class MedicalNotes {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private int id;
 
     private String dni;

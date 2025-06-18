@@ -3,17 +3,13 @@ package com.healthlife.nutritionservice.domain.model.aggregates;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "vaccines")
+
 public class Vaccine {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String dni;
     private String vacuna;
 
-    @Column(name = "fecha_aplicacion")
     private LocalDate fechaAplicacion;
 
     private String dosis;

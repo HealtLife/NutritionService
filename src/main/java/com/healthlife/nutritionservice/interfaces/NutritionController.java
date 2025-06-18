@@ -1,7 +1,10 @@
 package com.healthlife.nutritionservice.interfaces;
 
 import com.healthlife.nutritionservice.application.dto.*;
-import com.healthlife.nutritionservice.application.services.*;
+
+import com.healthlife.nutritionservice.domain.model.aggregates.Equipments;
+import com.healthlife.nutritionservice.domain.model.aggregates.Exercise;
+import com.healthlife.nutritionservice.domain.model.aggregates.Muscle;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +26,7 @@ public class NutritionController {
                 .build();
 
         this.webClientFApi = WebClient.builder()
-                .baseUrl("http://localhost:8086/api/v1/medical-history")
+                .baseUrl("http://localhost:8085/api/v1/fitnessapiservice")
                 .build();
     }
     @GetMapping("/personal-info/{dni}")
@@ -239,7 +242,70 @@ public class NutritionController {
 
         return ResponseEntity.ok().build();
     }
+    @GetMapping("/fitness/exercises")
+    public ResponseEntity<List<Exercise>> getExercises() {
+        List<Exercise> exercises = webClientFApi.get()
+                .uri("/exercises")
+                .retrieve()
+                .bodyToFlux(Exercise.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(exercises);
+    }
+    @GetMapping("/fitness/muscles")
+    public ResponseEntity<List<Muscle>> getAllMuscles() {
+        List<Muscle> muscles = webClientFApi.get()
+                .uri("/muscles")
+                .retrieve()
+                .bodyToFlux(Muscle.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(muscles);
+    }
 
+    @GetMapping("/fitness/muscles/{muscle}/exercises")
+    public ResponseEntity<List<Exercise>> getExercisesByMuscle(@PathVariable String muscle) {
+        List<Exercise> exercises = webClientFApi.get()
+                .uri("/muscles/{muscle}/exercises", muscle)
+                .retrieve()
+                .bodyToFlux(Exercise.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(exercises);
+    }
+
+    @GetMapping("/fitness/bodyparts/{bodyPart}/exercises")
+    public ResponseEntity<List<Exercise>> getExercisesByBodyPart(@PathVariable String bodyPart) {
+        List<Exercise> exercises = webClientFApi.get()
+                .uri("/bodyparts/{bodyPart}/exercises", bodyPart)
+                .retrieve()
+                .bodyToFlux(Exercise.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(exercises);
+    }
+
+    @GetMapping("/fitness/equipments/{equipment}/exercises")
+    public ResponseEntity<List<Exercise>> getExercisesByEquipment(@PathVariable String equipment) {
+        List<Exercise> exercises = webClientFApi.get()
+                .uri("/equipments/{equipment}/exercises", equipment)
+                .retrieve()
+                .bodyToFlux(Exercise.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(exercises);
+    }
+
+    @GetMapping("/fitness/equipments")
+    public ResponseEntity<List<Equipments>> getAllEquipments() {
+        List<Equipments> equipments = webClientFApi.get()
+                .uri("/equipments")
+                .retrieve()
+                .bodyToFlux(Equipments.class)
+                .collectList()
+                .block();
+        return ResponseEntity.ok(equipments);
+    }
 
 
 }

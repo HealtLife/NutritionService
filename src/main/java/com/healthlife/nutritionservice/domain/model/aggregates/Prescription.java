@@ -3,18 +3,14 @@ package com.healthlife.nutritionservice.domain.model.aggregates;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "prescription")
+
 public class Prescription {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String dni;
     private String prescripcion;
 
-    @Column(name = "fecha_receta")
     private LocalDate fechaReceta;
 
     private String medico;
