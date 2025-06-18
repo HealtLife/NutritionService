@@ -5,129 +5,241 @@ import com.healthlife.nutritionservice.application.services.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-@RequestMapping(value = "/api/v1/nutrition", produces = APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/v1/nutrition")
 public class NutritionController {
-    private final PersonalInfoService personalInfoService;
-    private final MedicalNotesService medicalNotesService;
-    private final AllergyService allergyService;
-    private final PrescriptionService prescriptionService;
-    private final VaccineService vaccineService;
-    private final WeightHeightService weightHeightService;
+    private final WebClient webClientMH;
+    private final WebClient webClientFApi;
 
-    public NutritionController(PersonalInfoService personalInfoService, MedicalNotesService medicalNotesService,
-                               AllergyService allergyService, PrescriptionService prescriptionService,
-                               VaccineService vaccineService, WeightHeightService weightHeightService) {
-        this.personalInfoService = personalInfoService;
-        this.medicalNotesService = medicalNotesService;
-        this.allergyService = allergyService;
-        this.prescriptionService = prescriptionService;
-        this.vaccineService = vaccineService;
-        this.weightHeightService = weightHeightService;
+    public NutritionController() {
+        this.webClientMH = WebClient.builder()
+                .baseUrl("http://localhost:8086/api/v1/medical-history")
+                .build();
+
+        this.webClientFApi = WebClient.builder()
+                .baseUrl("http://localhost:8086/api/v1/medical-history")
+                .build();
     }
-
-    // SYNC ENDPOINTS (Feign Client calls)
-    @PostMapping("/sync/{dni}")
-    @ResponseStatus(HttpStatus.OK)
-    public ResponseEntity<String> syncAllMedicalData(@PathVariable String dni) {
-        try {
-            personalInfoService.syncPersonalInfo(dni);
-            allergyService.syncAllergies(dni);
-            prescriptionService.syncPrescriptions(dni);
-            vaccineService.syncVaccines(dni);
-            weightHeightService.syncWeightHeight(dni);
-            return ResponseEntity.ok("Datos sincronizados correctamente para DNI: " + dni);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body("Error sincronizando datos: " + e.getMessage());
-        }
-    }
-
-    // PERSONAL INFO ENDPOINTS
-    @PostMapping("/personal-info")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void savePersonalInfo(@RequestBody PersonalInfoDto dto) {
-        personalInfoService.savePersonalInfo(dto);
-    }
-
-    @PutMapping("/personal-info/{dni}")
-    public void updatePersonalInfo(@PathVariable String dni, @RequestBody PersonalInfoDto dto) {
-        personalInfoService.updatePersonalInfo(dni, dto);
-    }
-
     @GetMapping("/personal-info/{dni}")
-    public ResponseEntity<PersonalInfoDto> getPersonalInfo(@PathVariable String dni) {
-        PersonalInfoDto dto = personalInfoService.getPersonalInfoByDni(dni);
+    public ResponseEntity<?> getPersonalInfo(@PathVariable String dni) {
+        PersonalInfoDto dto = webClientMH.get()
+                .uri("/personal-info/{dni}", dni)
+                .retrieve()
+                .bodyToMono(PersonalInfoDto.class)
+                .block();
+
         return ResponseEntity.ok(dto);
     }
 
-    // MEDICAL NOTES ENDPOINTS
-    @PostMapping("/medical-notes")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void saveMedicalNote(@RequestBody MedicalNotesDto dto) {
-        medicalNotesService.saveMedicalNote(dto);
-    }
+    @GetMapping("/medical-note/{dni}")
+    public ResponseEntity<?> getMedicalNotes(@PathVariable String dni) {
+        List<MedicalNotesDto> dtos = webClientMH.get()
+                .uri("/medical-note/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(MedicalNotesDto.class)
+                .collectList() // ✅ Convertimos a List
+                .block(); // ❗ Esperamos la lista completa de forma bloqueante (en este ejemplo)
 
-    @GetMapping("/medical-notes/{dni}")
-    public ResponseEntity<List<MedicalNotesDto>> getMedicalNotes(@PathVariable String dni) {
-        List<MedicalNotesDto> dtos = medicalNotesService.getMedicalNotesByDni(dni);
         return ResponseEntity.ok(dtos);
-    }
-
-    // ALLERGIES ENDPOINTS
-    @PostMapping("/allergies")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void saveAllergy(@RequestBody AllergyDto dto) {
-        allergyService.saveAllergy(dto);
     }
 
     @GetMapping("/allergies/{dni}")
-    public ResponseEntity<List<AllergyDto>> getAllergies(@PathVariable String dni) {
-        List<AllergyDto> dtos = allergyService.getAllergiesByDni(dni);
+    public ResponseEntity<?> getAllergy(@PathVariable String dni) {
+        List<AllergyDto> dtos = webClientMH.get()
+                .uri("/allergies/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(AllergyDto.class)
+                .collectList() // ✅ Convertimos a List
+                .block(); // ❗ Esperamos la lista completa de forma bloqueante (en este ejemplo)
+
+        return ResponseEntity.ok(dtos);
+    }
+    @GetMapping("/prescription/{dni}")
+    public ResponseEntity<?> getPrescriptions(@PathVariable String dni) {
+        List<PrescriptionDto> dtos = webClientMH.get()
+                .uri("/prescription/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(PrescriptionDto.class)
+                .collectList() // ✅ Convertimos a List
+                .block(); // ❗ Esperamos la lista completa de forma bloqueante (en este ejemplo)
+
         return ResponseEntity.ok(dtos);
     }
 
-    // PRESCRIPTIONS ENDPOINTS
-    @PostMapping("/prescriptions")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void savePrescription(@RequestBody PrescriptionDto dto) {
-        prescriptionService.savePrescription(dto);
-    }
+    @GetMapping("/vaccine/{dni}")
+    public ResponseEntity<?> getVaccine(@PathVariable String dni) {
+        List<VaccineDto> dtos = webClientMH.get()
+                .uri("/vaccine/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(VaccineDto.class)
+                .collectList() // ✅ Convertimos a List
+                .block(); // ❗ Esperamos la lista completa de forma bloqueante (en este ejemplo)
 
-    @GetMapping("/prescriptions/{dni}")
-    public ResponseEntity<List<PrescriptionDto>> getPrescriptions(@PathVariable String dni) {
-        List<PrescriptionDto> dtos = prescriptionService.getPrescriptionByDni(dni);
         return ResponseEntity.ok(dtos);
     }
 
-    // VACCINES ENDPOINTS
-    @PostMapping("/vaccines")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void saveVaccine(@RequestBody VaccineDto dto) {
-        vaccineService.saveVaccine(dto);
-    }
+    @GetMapping("/weightheight/{dni}")
+    public ResponseEntity<?> getWeightHeight(@PathVariable String dni) {
+        List<WeightHeightDto> dtos = webClientMH.get()
+                .uri("/weightheight/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(WeightHeightDto.class)
+                .collectList() // ✅ Convertimos a List
+                .block(); // ❗ Esperamos la lista completa de forma bloqueante (en este ejemplo)
 
-    @GetMapping("/vaccines/{dni}")
-    public ResponseEntity<List<VaccineDto>> getVaccines(@PathVariable String dni) {
-        List<VaccineDto> dtos = vaccineService.getVaccineByDni(dni);
         return ResponseEntity.ok(dtos);
     }
 
-    // WEIGHT HEIGHT ENDPOINTS
-    @PostMapping("/weight-height")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void saveWeightHeight(@RequestBody WeightHeightDto dto) {
-        weightHeightService.saveWeightHeight(dto);
+    @PostMapping("/personal-info")
+    public ResponseEntity<Void> savePersonalInfo(@RequestBody PersonalInfoDto dto) {
+        webClientMH.post()
+                .uri("/personal-info")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/weight-height/{dni}")
-    public ResponseEntity<List<WeightHeightDto>> getWeightHeight(@PathVariable String dni) {
-        List<WeightHeightDto> dtos = weightHeightService.getWeightHeightByDni(dni);
-        return ResponseEntity.ok(dtos);
+    @PostMapping("/medical-note")
+    public ResponseEntity<Void> saveMedicalNote(@RequestBody MedicalNotesDto dto) {
+        webClientMH.post()
+                .uri("/medical-note")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @PostMapping("/allergies")
+    public ResponseEntity<Void> saveAllergy(@RequestBody AllergyDto dto) {
+        webClientMH.post()
+                .uri("/allergies")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/prescription")
+    public ResponseEntity<Void> savePrescription(@RequestBody PrescriptionDto dto) {
+        webClientMH.post()
+                .uri("/prescription")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/vaccine")
+    public ResponseEntity<Void> saveVaccine(@RequestBody VaccineDto dto) {
+        webClientMH.post()
+                .uri("/vaccine")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/weightheight")
+    public ResponseEntity<Void> saveWeightHeight(@RequestBody WeightHeightDto dto) {
+        webClientMH.post()
+                .uri("/weightheight")
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PutMapping("/personal-info/{dni}")
+    public ResponseEntity<Void> updatePersonalInfo(@PathVariable String dni, @RequestBody PersonalInfoDto dto) {
+        webClientMH.put()
+                .uri("/personal-info/{dni}", dni)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/medical-note/{id}")
+    public ResponseEntity<Void> updateMedicalNote(@PathVariable Long id, @RequestBody MedicalNotesDto dto) {
+        webClientMH.put()
+                .uri("/medical-note/{id}", id)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/allergies/{id}")
+    public ResponseEntity<Void> updateAllergy(@PathVariable Long id, @RequestBody AllergyDto dto) {
+        webClientMH.put()
+                .uri("/allergies/{id}", id)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+    @PutMapping("/prescription/{id}")
+    public ResponseEntity<Void> updatePrescription(@PathVariable Long id, @RequestBody PrescriptionDto dto) {
+        webClientMH.put()
+                .uri("/prescription/{id}", id)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/vaccine/{id}")
+    public ResponseEntity<Void> updateVaccine(@PathVariable Long id, @RequestBody VaccineDto dto) {
+        webClientMH.put()
+                .uri("/vaccine/{id}", id)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+
+
+    @PutMapping("/weightheight/{id}")
+    public ResponseEntity<Void> updateWeightHeight(@PathVariable Long id, @RequestBody WeightHeightDto dto) {
+        webClientMH.put()
+                .uri("/weightheight/{id}", id)
+                .bodyValue(dto)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+
+        return ResponseEntity.ok().build();
+    }
+
+
+
 }

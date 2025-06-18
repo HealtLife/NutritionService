@@ -11,7 +11,7 @@ import java.sql.*;
 public class NutritionServiceApplication {
 
     public static void main(String[] args) {
-        createDatabaseIfNotExists("jdbc:postgresql://localhost:5432/", "postgres", "postgres", "nutrimove_nutrition");
+        createDatabaseIfNotExists("jdbc:postgresql://localhost:5432/", "postgres", "renato", "nutrimove_nutrition");
         SpringApplication.run(NutritionServiceApplication.class, args);
     }
 
