@@ -5,7 +5,9 @@ import com.healthlife.nutritionservice.application.dto.*;
 import com.healthlife.nutritionservice.domain.model.aggregates.Equipments;
 import com.healthlife.nutritionservice.domain.model.aggregates.Exercise;
 import com.healthlife.nutritionservice.domain.model.aggregates.Muscle;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,7 +21,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class NutritionController {
     private final WebClient webClientMH;
     private final WebClient webClientFApi;
-
+    private final WebClient webClientReports;
     public NutritionController() {
         this.webClientMH = WebClient.builder()
                 .baseUrl("http://localhost:8086/api/v1/medical-history")
@@ -28,7 +30,54 @@ public class NutritionController {
         this.webClientFApi = WebClient.builder()
                 .baseUrl("http://localhost:8085/api/v1/fitnessapiservice")
                 .build();
+
+        this.webClientReports = WebClient.builder()
+                .baseUrl("http://localhost:8089/api/v1/reports") // 👈 Ajusta el puerto si es distinto
+                .build();
     }
+
+    @GetMapping("/download-report")
+    public ResponseEntity<byte[]> downloadReport(@RequestParam String filename) {
+        byte[] fileBytes = webClientReports.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/descargar")
+                        .queryParam("filename", filename)
+                        .build())
+                .retrieve()
+                .bodyToMono(byte[].class)
+                .block();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(fileBytes);
+    }
+
+
+    @PostMapping("/generate-report")
+    public ResponseEntity<?> generateReport(@RequestBody CreateReportRequestDto dto) {
+        ReportDto report = webClientReports.post()
+                .uri("")
+                .bodyValue(dto)
+                .retrieve()
+                .bodyToMono(ReportDto.class)
+                .block();
+
+        return ResponseEntity.ok(report);
+    }
+    @GetMapping("/reports/{dni}")
+    public ResponseEntity<?> getReportsByDni(@PathVariable String dni) {
+        List<ReportDto> reports = webClientReports.get()
+                .uri("/usuario/{dni}", dni)
+                .retrieve()
+                .bodyToFlux(ReportDto.class)
+                .collectList()
+                .block();
+
+        return ResponseEntity.ok(reports);
+    }
+
+
     @GetMapping("/personal-info/{dni}")
     public ResponseEntity<?> getPersonalInfo(@PathVariable String dni) {
         PersonalInfoDto dto = webClientMH.get()
